@@ -10,34 +10,39 @@
         <div style="margin: 25px;">
             {{form.as_p}}
         </div>
-        <button type="submit" class="btn btn-primary" style="margin-left: 2px;">Submit</button>
+        <button type="submit" name="acao" value="excel" class="btn btn-primary" style="margin-left: 2px;">Submit</button>
     </form>
+</div>
+
+<div class='erro'>
+   <span> {{erro}} </span>
 </div>
 
 
 <div class="container">
     <h2>Planilha Principal</h2>
     <div class="search-filter">
-      <input type="text" id="searchInput" placeholder="Pesquisar..." />
-      <select id="columnFilter">
-        <option value="">Todas as Colunas</option>
-        <option value="0">Coluna 1</option>
-        <option value="1">Coluna 2</option>
-        <option value="2">Coluna 3</option>
+      <input type="text" id="searchInput" placeholder="Pesquisar..." name="q"/>
+      <select id="columnFilter" name="f">
+        <option >MOLDES EM PROGESSO</option>
       </select>
+      <form action="" method="POST">
+        {% csrf_token %}
+        <input type="submit" name="acao" value="Proxima">
+      </form>
     </div>
 
-    {% if dados %}
+    {% if ExcelDados %}
     <table id="excelTable">
         <thead>
             <tr>
-                {% for coluna in dados.0.keys %}
+                {% for coluna in ExcelDados.0.keys %}
                     <th>{{ coluna }}</th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
-            {% for linha in dados %}
+            {% for linha in ExcelDados %}
                 <tr>
                     {% for valor in linha.values %}
                         <td>{{ valor }}</td>

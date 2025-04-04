@@ -1,15 +1,19 @@
 import pandas as pd
 from django import forms
 from django.core.exceptions import ValidationError
+from .models import *
 
+class ExcelUploadForm(forms.ModelForm):
+    class Meta:
+        model = Excel
+        fields = ["arquivo"]
 
-class ExcelUploadForm(forms.Form):
-    arquivo_excel = forms.FileField(
+    arquivo = forms.FileField(
         widget=forms.FileInput(
             attrs={
-                'id': 'formFileUpload',
-                'class': 'form-control',
-                'name': 'arquivo_excel'
+                "id": "formFileUpload",
+                "class": "form-control",
+                "name": "arquivo_excel"
             }
         )
     )
