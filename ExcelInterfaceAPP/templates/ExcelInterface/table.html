@@ -2,7 +2,6 @@
 
 
 {% block content %}
-
 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
     <form method="POST" enctype="multipart/form-data" style="display: flex; align-items: center; width: 100%;">
         {% csrf_token %}
@@ -14,44 +13,66 @@
     </form>
 </div>
 
+{% if erro %}
 <div class='erro'>
-   <span> {{erro}} </span>
+    <p id="mensagem-erro" style="color: red;">{{ erro }}</p>
 </div>
-
+{% endif %}
 
 <div class="container">
     <h2>Planilha Principal</h2>
     <div class="search-filter">
-      <input type="text" id="searchInput" placeholder="Pesquisar..." name="q"/>
-      <select id="columnFilter" name="f">
-        <option >MOLDES EM PROGESSO</option>
-      </select>
-      <form action="" method="POST">
-        {% csrf_token %}
-        <input type="submit" name="acao" value="Proxima">
-      </form>
+        <!-- Formulário de busca -->
+        <form id="search-form" action="" method="get" style="width: 100%;">
+            <input type="text" id="searchInput" name="q" placeholder="Pesquisar..." value="{{ q|default_if_none:'' }}" autocomplete="off">
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-magnifying-glass"></i> Pesquisar
+            </button>
+        </form>
+
+        {% if abas %}
+        <form method="GET">
+            <select name="aba" id="aba" onchange="this.form.submit()">
+                {% for nome_aba in abas %}
+                    <option value="{{ nome_aba }}"
+                        {% if nome_aba == aba_selecionada %}selected{% endif %}
+                        {% if nome_aba in abas_sem_resultado %}style="background-color: #ffe5e5; color: #999;"{% endif %}>
+                        {{ nome_aba }}
+                        {% if nome_aba in abas_sem_resultado %}- 0 Resultados{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if q %}
+                <input type="hidden" name="q" value="{{ q }}">
+            {% endif %}
+        </form>
+        {% endif %}
     </div>
 
-    {% if ExcelDados %}
-    <table id="excelTable">
-        <thead>
-            <tr>
-                {% for coluna in ExcelDados.0.keys %}
-                    <th>{{ coluna }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for linha in ExcelDados %}
+    
+    <div id="resultado-tabela">
+        {% if ExcelDados %}
+        <table id="excelTable">
+            <thead>
                 <tr>
-                    {% for valor in linha.values %}
-                        <td>{{ valor }}</td>
+                    {% for coluna in ExcelDados.0.keys %}
+                        <th>{{ coluna }}</th>
                     {% endfor %}
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for linha in ExcelDados %}
+                    <tr>
+                        {% for valor in linha.values %}
+                            <td>{{ valor }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% endif %}
+</div>
+
 
 
 {% endblock %}

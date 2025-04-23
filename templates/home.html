@@ -8,60 +8,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
   </head>
-  <body>
-    <header>
-      <h1>Dashboard Principal</h1>
-      <div>
-        <nav>
-          <a href="/checklist">Check List</a>
-          <a href="/pecas">Peças</a>
-          <a href="/moldes">Moldes</a>
-        </nav>
-      </div>
-      <button class="btn-darkmode" onclick="toggleDarkMode()">
-        <i class="fas fa-moon"></i>
-      </button>
-    </header>
 
+  <body>
+    <header class="main-header">
+      <div class="navbar-container">
+        <div class="logo">Logo</div>
+        <nav class="navbar">
+          <a href="/checklist" class="nav-link">Check List</a>
+          <a href="/pecas" class="nav-link">Peças</a>
+          <a href="/moldes" class="nav-link">Moldes</a>
+        </nav>
+        <button class="btn-darkmode" onclick="toggleDarkMode()">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </header>
+  
+    <main class="main-content">
+      {% block content %}
+      {% endblock %}
+    </main>
+  
     <script>
       function toggleDarkMode() {
         document.body.classList.toggle("dark-mode");
       }
-
-      document
-        .getElementById("searchInput")
-        .addEventListener("keyup", filterTable);
-      document
-        .getElementById("columnFilter")
-        .addEventListener("change", filterTable);
-
-      function filterTable() {
-        const input = document
-          .getElementById("searchInput")
-          .value.toLowerCase();
-        const filterIndex = document.getElementById("columnFilter").value;
-        const rows = document.querySelectorAll("#excelTable tbody tr");
-
-        rows.forEach((row) => {
-          const cells = row.querySelectorAll("td");
-          let textToSearch = "";
-
-          if (filterIndex === "") {
-            textToSearch = Array.from(cells)
-              .map((cell) => cell.textContent.toLowerCase())
-              .join(" ");
-          } else {
-            textToSearch =
-              cells[parseInt(filterIndex)].textContent.toLowerCase();
-          }
-
-          row.style.display = textToSearch.includes(input) ? "" : "none";
-        });
-      }
     </script>
-
-
-    {% block content%}
-    {% endblock %}
-    <body>
-</html>
+  </body>
+  </html>
