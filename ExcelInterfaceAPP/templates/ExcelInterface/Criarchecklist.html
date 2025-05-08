@@ -1,0 +1,55 @@
+{% extends "home.html" %}
+
+{% block content %}
+
+<div class="main-container">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+    
+        <div id="itens-container">
+            <h3>Itens da Checklist</h3>
+            <div>
+                <input type="text" id="nome_item_input" placeholder="Nome do item">
+                <input type="text" id="descricao_item_input" placeholder="Descrição do item">
+                <button type="button" onclick="adicionarItem()">Adicionar item</button>
+            </div>
+            <ul id="lista-itens"></ul>
+        </div>
+    
+        <input type="hidden" name="itens_json" id="itens_json_input">
+    
+        <button type="submit">Salvar Checklist</button>
+    </form>
+</div>
+    <script>
+        const listaItens = [];
+        
+        function adicionarItem() {
+            const nome = document.getElementById("nome_item_input").value;
+            const descricao = document.getElementById("descricao_item_input").value;
+    
+            if (nome.trim() === "") return;
+    
+            listaItens.push({ nome: nome, descricao: descricao });
+            atualizarLista();
+            document.getElementById("itens_json_input").value = JSON.stringify(listaItens);
+    
+            // Limpa os campos
+            document.getElementById("nome_item_input").value = "";
+            document.getElementById("descricao_item_input").value = "";
+        }
+    
+        function atualizarLista() {
+            const ul = document.getElementById("lista-itens");
+            ul.innerHTML = "";
+    
+            listaItens.forEach((item, index) => {
+                const li = document.createElement("li");
+                li.textContent = ` ${item.nome} — ${item.descricao}`;
+                ul.appendChild(li);
+            });
+        }
+    </script>
+
+{% endblock%}

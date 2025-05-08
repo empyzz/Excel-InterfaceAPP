@@ -9,3 +9,25 @@ class Excel(models.Model):
     
     def __str__(self):
         return self.nome
+    
+
+class Checklist(models.Model):
+    excel = models.ForeignKey(Excel, on_delete=models.CASCADE, related_name="checklist")
+    aba = models.CharField(max_length=100)
+    nome_lista = models.CharField(max_length=100)
+    descricao_lista = models.TextField(blank=True)
+    data_criacao = models.DateField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Checklist para {self.excel} - {self.nome_lista} ({self.aba})"
+    
+    
+class ChecklistITEM(models.Model):
+    Lista = models.ForeignKey(Checklist, on_delete=models.CASCADE, related_name="ItemLista")
+    nome_item = models.CharField(max_length=255)
+    statusItem = models.BooleanField(default=False)
+    descricaoItem = models.TextField(blank=True)
+    
+    
+    def __str__(self):
+        return f"{self.nome_item} - {self.Lista} "

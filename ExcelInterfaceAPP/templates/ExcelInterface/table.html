@@ -2,14 +2,16 @@
 
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-    <form method="POST" enctype="multipart/form-data" style="display: flex; align-items: center; width: 100%;">
+<div class="upload-wrapper">
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
         {% csrf_token %}
-        <label for="formFileUpload" style="margin-right: 10px; padding-bottom: 10px;">Arquivo Excel</label>
-        <div style="margin: 25px;">
-            {{form.as_p}}
+        <label for="formFileUpload" class="upload-label">Arquivo Excel</label>
+        <div class="upload-field">
+            {{ form.as_p }}
         </div>
-        <button type="submit" name="acao" value="excel" class="btn btn-primary" style="margin-left: 2px;">Submit</button>
+        <button type="submit" name="acao" value="excel" class="btn-submit">
+            Enviar Excel
+        </button>
     </form>
 </div>
 
@@ -23,16 +25,16 @@
     <h2>Planilha Principal</h2>
     <div class="search-filter">
         <!-- Formulário de busca -->
-        <form id="search-form" action="" method="get" style="width: 100%;">
-            <input type="text" id="searchInput" name="q" placeholder="Pesquisar..." value="{{ q|default_if_none:'' }}" autocomplete="off">
-            <button type="submit" class="btn-submit">
-                <i class="fa-solid fa-magnifying-glass"></i> Pesquisar
-            </button>
-        </form>
-
-        {% if abas %}
-        <form method="GET">
-            <select name="aba" id="aba" onchange="this.form.submit()">
+        <form method="GET" style="display: flex; gap: 10px;">
+            <div style="position: relative;">
+                <input type="text" name="q" placeholder="Pesquisar..." value="{{ q|default_if_none:'' }}" autocomplete="off" style="padding-right: 30px;">
+                {% if q %}
+                    <a href="{% url 'home' %}?aba={{ aba_selecionada }}" title="Limpar busca" class="limpa">
+                        &#x2715;
+                    </a>
+                {% endif %}
+            </div>
+            <select name="aba" onchange="this.form.submit()">
                 {% for nome_aba in abas %}
                     <option value="{{ nome_aba }}"
                         {% if nome_aba == aba_selecionada %}selected{% endif %}
@@ -42,14 +44,13 @@
                     </option>
                 {% endfor %}
             </select>
-            {% if q %}
-                <input type="hidden" name="q" value="{{ q }}">
-            {% endif %}
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-magnifying-glass"></i> Pesquisar
+            </button>
         </form>
-        {% endif %}
     </div>
 
-    
+
     <div id="resultado-tabela">
         {% if ExcelDados %}
         <table id="excelTable">

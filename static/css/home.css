@@ -35,10 +35,11 @@ body {
   margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .logo {
+  flex: 1;
   font-size: 1.8rem;
   font-weight: 700;
   order: 0;
@@ -47,8 +48,10 @@ body {
 .navbar {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 20px;
   order: 1;
+  padding-right: 25px;
 }
 
 .nav-link {
@@ -90,6 +93,47 @@ body {
 
 .btn-darkmode:hover {
   color: #ddd;
+}
+
+.form-control{
+  color: var(--text-light);
+}
+
+.dark-mode .form-control{
+  color: var(--text-dark);
+}
+
+.upload-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 10px 0;
+  text-align: center;
+}
+
+.upload-form {
+  display: flex;
+  align-items: center;
+  width: 75%;
+  gap: 20px;
+  flex-wrap: wrap; /* Responsivo para telas menores */
+}
+
+.upload-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  min-width: 120px;
+}
+
+.upload-field {
+  margin: 10px 0;
+  flex: 1;
+}
+
+.upload-btn {
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 /* Main Content */
@@ -191,4 +235,17 @@ input[type="text"], select {
   width: 250px;
   border: 1px solid #ccc;
   border-radius: 5px;
+}
+
+.limpa{
+  position: absolute;
+  right: 8px; 
+  top: 50%; 
+  transform: translateY(-50%); 
+  color: var(--text-light); 
+  text-decoration: none;
+}
+
+.dark-mode .limpa{
+  color: var(--text-dark);
 }

@@ -1,5 +1,56 @@
 {% extends "home.html" %}
-
 {% block content %}
+
+<a href="{% url 'Nova-CheckList' %}">Nova-CheckList</a>
+
+<div>
+    {% for checklist in checklists %}
+        <a href="{% url 'Atualizar_Status_item' item_type='checklist' objetoId=checklist.id %}">Deletar Lista?</a>        <p><strong>Lista:</strong> {{ checklist.nome_lista }}</p>
+        <p><strong>Aba:</strong> {{ checklist.aba }}</p>
+        <p><strong>Descrição:</strong> {{ checklist.descricao_lista }}</p>
+        <p><strong>Data de Criação:</strong> {{ checklist.data_criacao }}</p>
+
+        <p><strong>Itens:</strong></p>
+        <ul>
+            {% for item in checklist.ItemLista.all %}
+                <li>
+                    <input type="checkbox" class="status-checkbox"
+                           data-id="{{ item.id }}"
+                           {% if item.statusItem %}checked{% endif %}>
+                    {{ item.nome_item }}
+                </li>
+            {% empty %}
+                <li><em>Sem itens nesta lista.</em></li>
+            {% endfor %}
+        </ul>
+        <hr>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.status-checkbox').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            const itemId = this.dataset.id;
+            const status = this.checked;
+
+            fetch("{% url 'atualizar_status_item' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: `item_id=${itemId}&status=${status}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("Erro ao atualizar item!");
+                }
+            });
+        });
+    });
+});
+</script>
 
 {% endblock %}
