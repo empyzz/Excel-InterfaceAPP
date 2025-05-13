@@ -1,79 +1,81 @@
 {% extends "home.html" %}
 
-
 {% block content %}
-<div class="upload-wrapper">
-    <form method="POST" enctype="multipart/form-data" class="upload-form">
+<div class="flex justify-center">
+    <form method="POST" enctype="multipart/form-data" class="bg-base-100 shadow-lg rounded-xl p-6 space-y-4 w-full max-w-md">
         {% csrf_token %}
-        <label for="formFileUpload" class="upload-label">Arquivo Excel</label>
-        <div class="upload-field">
+        <label for="formFileUpload" class="text-lg font-bold text-base-content">Upload de Arquivo Excel</label>
+        <div class="space-y-4">
             {{ form.as_p }}
         </div>
-        <button type="submit" name="acao" value="excel" class="btn-submit">
+        <button type="submit" name="acao" value="excel" class="btn btn-primary w-full">
             Enviar Excel
         </button>
     </form>
 </div>
 
-{% if erro %}
-<div class='erro'>
-    <p id="mensagem-erro" style="color: red;">{{ erro }}</p>
-</div>
-{% endif %}
 
-<div class="container">
-    <h2>Planilha Principal</h2>
-    <div class="search-filter">
-        <!-- Formulário de busca -->
-        <form method="GET" style="display: flex; gap: 10px;">
-            <div style="position: relative;">
-                <input type="text" name="q" placeholder="Pesquisar..." value="{{ q|default_if_none:'' }}" autocomplete="off" style="padding-right: 30px;">
+<div class="mt-10">
+    <h2 class="text-2xl font-bold text-base-content">Planilha Principal</h2>
+
+    <!-- Formulário de busca -->
+    <form method="GET" class="mt-6 flex flex-wrap gap-4 items-center">
+        <div class="form-control w-72">
+            <div class="relative">
+                <input type="text" name="q" placeholder="Pesquisar..." value="{{ q|default_if_none:'' }}" autocomplete="off" class="input input-bordered w-full pr-10" />
                 {% if q %}
-                    <a href="{% url 'home' %}?aba={{ aba_selecionada }}" title="Limpar busca" class="limpa">
-                        &#x2715;
-                    </a>
+                <a href="{% url 'home' %}?aba={{ aba_selecionada }}" title="Limpar busca">
+                    <button type="button" class="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-red-500">✕</button>
+
+                </a>
                 {% endif %}
             </div>
-            <select name="aba" onchange="this.form.submit()">
-                {% for nome_aba in abas %}
-                    <option value="{{ nome_aba }}"
-                        {% if nome_aba == aba_selecionada %}selected{% endif %}
-                        {% if nome_aba in abas_sem_resultado %}style="background-color: #ffe5e5; color: #999;"{% endif %}>
-                        {{ nome_aba }}
-                        {% if nome_aba in abas_sem_resultado %}- 0 Resultados{% endif %}
-                    </option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn-submit">
-                <i class="fa-solid fa-magnifying-glass"></i> Pesquisar
-            </button>
-        </form>
-    </div>
+        </div>
 
+        <select name="aba" onchange="this.form.submit()" class="select select-bordered w-60">
+            {% for nome_aba in abas %}
+            <option value="{{ nome_aba }}"
+                {% if nome_aba == aba_selecionada %}selected{% endif %}
+                {% if nome_aba in abas_sem_resultado %}class="bg-red-100 text-gray-400"{% endif %}>
+                {{ nome_aba }}
+                {% if nome_aba in abas_sem_resultado %} - 0 Resultados{% endif %}
+            </option>
+            {% endfor %}
+        </select>
 
-    <div id="resultado-tabela">
+        <button type="submit" class="btn btn-outline btn-primary text-left">
+            <i class="fa-solid fa-magnifying-glass"></i>Pesquisar
+        </button>
+    </form>
+
+    <!-- Tabela -->
+    <div id="resultado-tabela" class="mt-8 overflow-x-auto">
         {% if ExcelDados %}
-        <table id="excelTable">
-            <thead>
+        <table class="table table-zebra w-full">
+            <thead class="bg-base-300 text-base-content">
                 <tr>
                     {% for coluna in ExcelDados.0.keys %}
-                        <th>{{ coluna }}</th>
+                    <th>{{ coluna }}</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for linha in ExcelDados %}
-                    <tr>
-                        {% for valor in linha.values %}
-                            <td>{{ valor }}</td>
-                        {% endfor %}
-                    </tr>
+                <tr class="even:bg-base-100 odd:bg-base-200 hover:!bg-base-300">
+                    {% for valor in linha.values %}
+                    <td>{{ valor }}</td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% endif %}
+        {% else %}
+        <div class="mt-6">
+            <div class="alert alert-info">
+                <span>{{erro}}</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </div>
-
-
-
 {% endblock %}
