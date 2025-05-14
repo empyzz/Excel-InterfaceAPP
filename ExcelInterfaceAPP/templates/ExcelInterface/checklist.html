@@ -1,55 +1,77 @@
 {% extends "home.html" %}
 {% block content %}
 
-<a href="{% url 'Nova-CheckList' %}">Nova-CheckList</a>
+<div class="container mx-auto px-4 py-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Listas de Checklists</h1>
+    <a href="{% url 'Nova-CheckList' %}" class="btn btn-primary">+ Nova Checklist</a>
+  </div>
 
-<div>
+  <div class="space-y-6">
     {% for checklist in checklists %}
-        <a href="{% url 'Atualizar_Status_item' item_type='checklist' objetoId=checklist.id %}">Deletar Lista?</a>        <p><strong>Lista:</strong> {{ checklist.nome_lista }}</p>
-        <p><strong>Aba:</strong> {{ checklist.aba }}</p>
-        <p><strong>Descrição:</strong> {{ checklist.descricao_lista }}</p>
-        <p><strong>Data de Criação:</strong> {{ checklist.data_criacao }}</p>
+      <div class="card shadow-md bg-base-100">
+        <div class="card-body">
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="card-title text-xl font-semibold">{{ checklist.nome_lista }}</h2>
+              <p class="text-sm text-base-content/70"><strong>Aba:</strong> {{ checklist.aba }}</p>
+              <p class="text-sm text-base-content/70"><strong>Descrição:</strong> {{ checklist.descricao_lista }}</p>
+              <p class="text-sm text-base-content/60"><strong>Data de Criação:</strong> {{ checklist.data_criacao }}</p>
+            </div>
+            <a href="{% url 'Atualizar_Status_item' item_type='checklist' objetoId=checklist.id %}" class="btn btn-outline btn-error btn-sm">
+              Deletar Lista?
+            </a>
+          </div>
 
-        <p><strong>Itens:</strong></p>
-        <ul>
-            {% for item in checklist.ItemLista.all %}
-                <li>
-                    <input type="checkbox" class="status-checkbox"
-                           data-id="{{ item.id }}"
-                           {% if item.statusItem %}checked{% endif %}>
+          <div class="mt-4">
+            <p class="font-medium">Itens:</p>
+            <ul class="list-disc list-inside space-y-1">
+              {% for item in checklist.ItemLista.all %}
+                <li class="flex items-center gap-2">
+                  <input type="checkbox"
+                         class="checkbox checkbox-sm status-checkbox"
+                         data-id="{{ item.id }}"
+                         {% if item.statusItem %}checked{% endif %}>
+                  <span class="text-gray-400">
                     {{ item.nome_item }}
+                  </span>
                 </li>
-            {% empty %}
-                <li><em>Sem itens nesta lista.</em></li>
-            {% endfor %}
-        </ul>
-        <hr>
+              {% empty %}
+                <li><em class="text-sm text-gray-500">Sem itens nesta lista.</em></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-center text-gray-500">Nenhuma checklist cadastrada.</p>
     {% endfor %}
+  </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.status-checkbox').forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            const itemId = this.dataset.id;
-            const status = this.checked;
+  document.querySelectorAll('.status-checkbox').forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () {
+      const itemId = this.dataset.id;
+      const status = this.checked;
 
-            fetch("{% url 'atualizar_status_item' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-                body: `item_id=${itemId}&status=${status}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    alert("Erro ao atualizar item!");
-                }
-            });
-        });
+      fetch("{% url 'atualizar_status_item' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: `item_id=${itemId}&status=${status}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (!data.success) {
+          alert("Erro ao atualizar item!");
+        }
+      });
     });
+  });
 });
 </script>
 
