@@ -1,55 +1,98 @@
 {% extends "home.html" %}
 
 {% block content %}
+<div class="max-w-3xl mx-auto mt-10 p-6 bg-base-100 rounded-2xl shadow-md space-y-6 border border-base-300">
+    <h2 class="text-2xl font-bold text-primary">Criar Nova Checklist</h2>
 
-<div class="main-container">
-    <form method="post">
+    <form method="post" class="space-y-6">
         {% csrf_token %}
-        {{ form.as_p }}
-    
-        <div id="itens-container">
-            <h3>Itens da Checklist</h3>
-            <div>
-                <input type="text" id="nome_item_input" placeholder="Nome do item">
-                <input type="text" id="descricao_item_input" placeholder="Descrição do item">
-                <button type="button" onclick="adicionarItem()">Adicionar item</button>
-            </div>
-            <ul id="lista-itens"></ul>
+        <div class="space-y-4">
+            {{ form.as_p }}
         </div>
-    
+
+        <div id="itens-container" class="space-y-4">
+            <h3 class="text-lg font-semibold">Itens da Checklist</h3>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <input
+                    type="text"
+                    id="nome_item_input"
+                    placeholder="Nome do item"
+                    class="input input-bordered w-full"
+                >
+                <input
+                    type="text"
+                    id="descricao_item_input"
+                    placeholder="Descrição do item"
+                    class="input input-bordered w-full"
+                >
+                <button
+                    type="button"
+                    onclick="adicionarItem()"
+                    class="btn btn-primary whitespace-nowrap"
+                >
+                    Adicionar
+                </button>
+            </div>
+
+            <ul id="lista-itens" class="space-y-2 text-sm list-inside pt-2 text-base-content/90"></ul>
+        </div>
+
         <input type="hidden" name="itens_json" id="itens_json_input">
-    
-        <button type="submit">Salvar Checklist</button>
+
+        <div class="pt-4">
+            <button type="submit" class="btn btn-success w-full sm:w-auto">
+                Salvar Checklist
+            </button>
+        </div>
     </form>
 </div>
-    <script>
-        const listaItens = [];
-        
-        function adicionarItem() {
-            const nome = document.getElementById("nome_item_input").value;
-            const descricao = document.getElementById("descricao_item_input").value;
-    
-            if (nome.trim() === "") return;
-    
-            listaItens.push({ nome: nome, descricao: descricao });
-            atualizarLista();
-            document.getElementById("itens_json_input").value = JSON.stringify(listaItens);
-    
-            // Limpa os campos
-            document.getElementById("nome_item_input").value = "";
-            document.getElementById("descricao_item_input").value = "";
-        }
-    
-        function atualizarLista() {
-            const ul = document.getElementById("lista-itens");
-            ul.innerHTML = "";
-    
-            listaItens.forEach((item, index) => {
-                const li = document.createElement("li");
-                li.textContent = ` ${item.nome} — ${item.descricao}`;
-                ul.appendChild(li);
-            });
-        }
-    </script>
 
-{% endblock%}
+<script>
+    const listaItens = [];
+
+    function adicionarItem() {
+        const nome = document.getElementById("nome_item_input").value.trim();
+        const descricao = document.getElementById("descricao_item_input").value.trim();
+
+        if (!nome) return;
+
+        listaItens.push({ nome, descricao });
+        atualizarLista();
+        document.getElementById("itens_json_input").value = JSON.stringify(listaItens);
+
+        document.getElementById("nome_item_input").value = "";
+        document.getElementById("descricao_item_input").value = "";
+    }
+
+    function atualizarLista() {
+        const ul = document.getElementById("lista-itens");
+        ul.innerHTML = "";
+
+        listaItens.forEach((item, index) => {
+            const li = document.createElement("li");
+            li.className = "flex items-center justify-between bg-base-200 rounded p-2";
+
+            const texto = document.createElement("span");
+            texto.textContent = `${item.nome} — ${item.descricao}`;
+
+            const btnRemover = document.createElement("button");
+            btnRemover.className = "btn btn-sm btn-circle btn-ghost text-error hover:bg-error/10";
+            btnRemover.innerHTML = `
+            <i class="fa-solid fa-trash"></i>
+            `;
+
+            btnRemover.onclick = () => {
+                listaItens.splice(index, 1);
+                atualizarLista();
+                document.getElementById("itens_json_input").value = JSON.stringify(listaItens);
+            };
+
+            li.appendChild(texto);
+            li.appendChild(btnRemover);
+            ul.appendChild(li);
+        });
+    }
+</script>
+
+{% endblock %}

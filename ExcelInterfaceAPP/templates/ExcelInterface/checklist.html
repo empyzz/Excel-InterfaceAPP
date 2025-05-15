@@ -3,10 +3,212 @@
 
 <div class="container mx-auto px-4 py-6">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold">Listas de Checklists</h1>
+    <h1 class="text-3xl font-bold">Listas de Checklists</h1>
     <a href="{% url 'Nova-CheckList' %}" class="btn btn-primary">+ Nova Checklist</a>
   </div>
 
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for checklist in checklists %}
+      <div class="card bg-base-100 shadow-xl border border-base-300 
+                  hover:shadow-2xl hover:scale-105 transition-transform duration-300
+                  hover:ring-4 hover:ring-primary hover:ring-offset-2 hover:ring-offset-base-100">
+        <div class="card-body">
+          <h2 class="card-title text-xl font-semibold">{{ checklist.nome_lista }}</h2>
+          <p class="text-sm text-base-content/70"><strong>Aba:</strong> {{ checklist.aba }}</p>
+          <p class="text-sm text-base-content/70 line-clamp-3"><strong>Descrição:</strong> {{ checklist.descricao_lista }}</p>
+          <p class="text-xs text-base-content/50 mt-2"><strong>Data de Criação:</strong> {{ checklist.data_criacao }}</p>
+
+          <div class="card-actions justify-center mt-4">
+            <button 
+              data-id="{{ checklist.id }}" 
+              class="btn btn-outline btn-primary btn-sm abrir-checklist-btn">
+              Acessar Checklist
+            </button>
+            <button 
+              onclick="abrirModal(this)" 
+              class="btn btn-outline btn-error btn-sm"
+              data-nome="{{ checklist.nome_lista }}"
+              data-id="{{ checklist.id }}"
+            >
+              Deletar Lista?
+            </button>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-center text-gray-500">Nenhuma checklist cadastrada.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- DIV PARA NOVA PAGINA -->
+<div id="checklist-container" class="fixed inset-0 glass bg-opacity-80 hidden justify-center items-center z-50 p-4"
+     style="background-image: none; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(24px);">
+
+  <div class="bg-base-100 p-8 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative">
+    <button id="close-checklist" class="btn btn-sm btn-circle btn-ghost absolute top-4 right-4">✕</button>
+    <div id="checklist-content"></div>
+  </div>
+</div>
+
+<!--Modal Delete-->
+<dialog id="my_modal_2" class="modal" onclick="modal-backdrop">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">Deletar Checklist?</h3>
+    <p class="pt-4 text-base">Tem certeza que deseja deletar <span id="modal-nome-lista" class="font-semibold"></span>?</p>
+    <p><span class="text-sm font-bold text-warning">Não será possível reverter essa ação</span></p>
+    <form id="delete-form" method="POST" onsubmit="return deletarLista(event)">
+      {% csrf_token %}
+      <div class="modal-action">
+        <button type="submit" class="btn btn-error hover:scale-105 hover:brightness-110 transition-transform duration-200">
+          Deletar
+        </button>
+        <button type="button" onclick="my_modal_2.close()" class="btn hover:scale-110 hover:bg-base-200 transition-transform duration-200">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button></button>
+  </form>
+</dialog>
+
+
+<script>
+  function abrirModal(botao) {
+    const nome = encodeURIComponent(botao.dataset.nome);
+    const id = botao.dataset.id;
+
+    document.getElementById('modal-nome-lista').textContent = decodeURIComponent(nome);
+    document.getElementById('delete-form').action = `/deletar_lista/${nome}/${id}/`;
+
+    my_modal_2.showModal();
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  function setupCheckboxes() {
+    document.querySelectorAll('.status-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const itemId = this.dataset.id;
+        const status = this.checked;
+
+        fetch("{% url 'atualizar_status_item' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken
+          },
+          body: `item_id=${itemId}&status=${status}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            alert("Erro ao atualizar item!");
+          }
+        })
+        .catch(error => {
+          console.error('Erro na requisição:', error);
+          alert("Erro na comunicação com o servidor.");
+        });
+      });
+    });
+  }
+
+  async function deletarLista(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const action = form.getAttribute('action');
+
+    try {
+      const response = await fetch(action, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrftoken,
+          'Accept': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+    if (response.ok) {
+      my_modal_2.close();
+      location.reload();
+    } else {
+      alert(data.error || 'Erro ao deletar.');
+    }
+    } catch (err) {
+      alert('Erro na requisição.');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    const container = document.getElementById('checklist-container');
+    const content = document.getElementById('checklist-content');
+    const closeBtn = document.getElementById('close-checklist');
+
+    document.querySelectorAll('.abrir-checklist-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const checklistId = button.dataset.id;
+        fetch(`/abrir-checklist/${checklistId}/`)
+          .then(res => res.json())
+          .then(data => {
+            content.innerHTML = data.html;
+            container.classList.remove('hidden');
+            container.classList.add('flex');
+            setupCheckboxes();
+          })
+          .catch(() => alert('Erro ao carregar a checklist.'));
+      });
+    });
+
+    closeBtn.addEventListener('click', () => {
+      container.classList.add('hidden');
+      container.classList.remove('flex');
+      content.innerHTML = '';
+    });
+
+    container.addEventListener('click', (e) => {
+      if (e.target === container) {
+        closeBtn.click();
+      }
+    });
+
+    setupCheckboxes();
+
+
+    const deleteForm = document.getElementById('delete-form');
+    if(deleteForm) {
+      deleteForm.addEventListener('submit', deletarLista);
+    }
+  });
+</script>
+
+
+
+
+{% endblock %}
+
+
+
+<!-- 
   <div class="space-y-6">
     {% for checklist in checklists %}
       <div class="card shadow-md bg-base-100">
@@ -75,4 +277,5 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-{% endblock %}
+
+-->

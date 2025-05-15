@@ -1,0 +1,56 @@
+<h2 class="text-3xl font-bold mb-6">{{ checklist.nome_lista }}</h2>
+<p class="mb-1"><strong>Aba:</strong> {{ checklist.aba }}</p>
+<p class="mb-1"><strong>Descrição:</strong> {{ checklist.descricao_lista }}</p>
+<p class="mb-4 text-sm text-base-content/70"><strong>Data de Criação:</strong> {{ checklist.data_criacao }}</p>
+
+<h3 class="mt-6 font-semibold mb-4">Itens:</h3>
+
+{% if checklist.ItemLista.all %}
+  <div id="checklist-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[50vh] overflow-y-auto pr-2">
+    {% for item in checklist.ItemLista.all %}
+      <label class="flex items-center gap-2 cursor-default select-none">
+        <input type="checkbox"
+               class="checkbox checkbox-sm checkbox-primary status-checkbox"
+               data-id="{{ item.id }}"
+               {% if item.statusItem %}checked{% endif %}>
+        <span class="text-gray-400 text-sm">
+          {{ item.nome_item }}
+        </span>
+      </label>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-gray-500 italic">Sem itens nesta lista.</p>
+{% endif %}
+
+<script>
+  function setupCheckboxes() {
+    document.querySelectorAll('.status-checkbox').forEach(function (checkbox) {
+      checkbox.addEventListener('change', function () {
+        const itemId = this.dataset.id;
+        const status = this.checked;
+
+        fetch("{% url 'atualizar_status_item' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken,  // Usa a variável global do template principal
+          },
+          body: `item_id=${itemId}&status=${status}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            alert("Erro ao atualizar item!");
+          }
+        })
+        .catch(error => {
+          console.error('Erro na requisição:', error);
+        });
+      });
+    });
+  }
+
+  // Executa setupCheckboxes após o partial ser inserido
+  setupCheckboxes();
+</script>

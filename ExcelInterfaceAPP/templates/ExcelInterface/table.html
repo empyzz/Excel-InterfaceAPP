@@ -51,7 +51,7 @@
     <!-- Tabela -->
     <div id="resultado-tabela" class="mt-8 overflow-x-auto">
         {% if ExcelDados %}
-        <table class="table table-zebra w-full">
+        <table class="table w-full">
             <thead class="bg-base-300 text-base-content">
                 <tr>
                     {% for coluna in ExcelDados.0.keys %}
@@ -61,7 +61,7 @@
             </thead>
             <tbody>
                 {% for linha in ExcelDados %}
-                <tr class="even:bg-base-100 odd:bg-base-200 hover:bg-base-300">
+                <tr class="hover:bg-primary hover:text-primary-content">
                     {% for valor in linha.values %}
                     <td>{{ valor }}</td>
                     {% endfor %}
@@ -69,6 +69,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        
         {% else %}
         <div class="mt-6">
             <div class="alert alert-info">

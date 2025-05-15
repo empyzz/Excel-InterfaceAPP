@@ -124,15 +124,18 @@ def criar_checklist(request):
         abas = get_abas_do_excel(caminho_arquivo)
     except Excel.DoesNotExist:
         messages.warning(request, "Nenhum arquivo Excel foi enviado ainda.")
+        ultimo_excel = None
     except Exception as e:
         messages.error(request, f"Erro ao carregar abas do Excel: {e}")
+        ultimo_excel = None
 
     if request.method == 'POST':
         form = CheckListForm(request.POST, abas=abas)
         if form.is_valid():
-            checklist = form.save()
-
-            # Pega os itens do campo oculto (JSON)
+            checklist = form.save(commit=False)
+            if ultimo_excel:
+                checklist.excel = ultimo_excel
+            checklist.save()
             itens_json = request.POST.get('itens_json', '[]')
             try:
                 itens = json.loads(itens_json)
@@ -151,7 +154,7 @@ def criar_checklist(request):
         form = CheckListForm(abas=abas)
 
     return render(request, 'ExcelInterface/Criarchecklist.html', {'form': form})
-            
+
     
 def atualizar_status_item(request):
     if request.method == 'POST':
@@ -170,11 +173,14 @@ def atualizar_status_item(request):
 
 
 def DeletarLista(request, item_type, objetoId):
-    if request.method == "DELETE":
-        print(f"Deletando item: {item_type} com ID {objetoId}")
-        
+    if request.method == "POST":
         item = get_object_or_404(Checklist, pk=objetoId)
         item.delete()
-        
         return JsonResponse({'message': 'Objeto excluído com sucesso.'}, status=200)
     return JsonResponse({'error': 'Método não permitido'}, status=405)
+
+
+def abrir_checklist(request, checklist_id):
+    checklist = get_object_or_404(Checklist, id=checklist_id)
+    html = render(request, 'partials/checklist_detail.html', {'checklist': checklist}).content.decode('utf-8')
+    return JsonResponse({'html': html})

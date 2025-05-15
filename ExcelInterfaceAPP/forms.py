@@ -23,7 +23,17 @@ class ExcelUploadForm(forms.ModelForm):
 class CheckListForm(forms.ModelForm):
     class Meta:
         model = Checklist
-        fields = ['excel', 'aba', 'nome_lista', 'descricao_lista']
+        fields = ['aba', 'nome_lista', 'descricao_lista']
+        widgets = {
+            'nome_lista': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Nome da Lista'
+            }),
+            'descricao_lista': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Descrição da Lista'
+            }),
+        }
 
     def __init__(self, *args, **kwargs):
         abas = kwargs.pop('abas', [])
@@ -31,7 +41,10 @@ class CheckListForm(forms.ModelForm):
 
         self.fields['aba'] = forms.ChoiceField(
             choices=[(aba, aba) for aba in abas],
-            label="Aba do Excel"
+            label="Aba do Excel",
+            widget=forms.Select(attrs={
+                'class': 'select select-bordered w-full'
+            })
         )
         
 class CheckListItemForm(forms.ModelForm):
