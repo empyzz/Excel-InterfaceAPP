@@ -1,21 +1,8 @@
 {% extends "home.html" %}
 
 {% block content %}
-<div class="flex justify-center">
-    <form method="POST" enctype="multipart/form-data" class="bg-base-100 shadow-lg rounded-xl p-6 space-y-4 w-full max-w-md">
-        {% csrf_token %}
-        <label for="formFileUpload" class="text-lg font-bold text-base-content">Upload de Arquivo Excel</label>
-        <div class="space-y-4">
-            {{ form.as_p }}
-        </div>
-        <button type="submit" name="acao" value="excel" class="btn btn-primary w-full">
-            Enviar Excel
-        </button>
-    </form>
-</div>
+<div class="mt-2 relative">
 
-
-<div class="mt-10">
     <h2 class="text-2xl font-bold text-base-content">Planilha Principal</h2>
 
     <!-- Formulário de busca -->
@@ -24,10 +11,8 @@
             <div class="relative">
                 <input type="text" name="q" placeholder="Pesquisar..." value="{{ q|default_if_none:'' }}" autocomplete="off" class="input input-bordered w-full pr-10" />
                 {% if q %}
-                <a href="{% url 'home' %}?aba={{ aba_selecionada }}" title="Limpar busca">
-                    <button type="button" class="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-red-500">✕</button>
-
-                </a>
+                <a href="{% url 'home' %}?aba={{ aba_selecionada }}" title="Limpar busca"
+                   class="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-red-500">✕</a>
                 {% endif %}
             </div>
         </div>
@@ -49,27 +34,62 @@
     </form>
 
     <!-- Tabela -->
-    <div id="resultado-tabela" class="mt-8 overflow-x-auto">
+    <div id="resultado-tabela" class="mt-8 overflow-auto h-dvh max-h-[65vh] shadow-lg rounded-xl bg-base-200">
         {% if ExcelDados %}
-        <table class="table w-full">
-            <thead class="bg-base-300 text-base-content">
+        <!-- Paginação Topo -->
+        <div class="flex justify-center mt-4">
+            {% if ExcelDados.has_previous %}
+            <a href="?page=1{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Primeira</a>
+            <a href="?page={{ ExcelDados.previous_page_number }}{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Anterior</a>
+            {% endif %}
+
+            <span class="btn btn-sm mx-1 btn-success">
+                Página {{ ExcelDados.number }} de {{ ExcelDados.paginator.num_pages }}
+            </span>
+
+            {% if ExcelDados.has_next %}
+            <a href="?page={{ ExcelDados.next_page_number }}{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Próxima</a>
+            <a href="?page={{ ExcelDados.paginator.num_pages }}{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Última</a>
+            {% endif %}
+        </div>
+
+        <table class="table w-full text-sm whitespace-normal mt-4 max-h-96">
+            <thead class="bg-base-300 text-base-content sticky top-0 z-1">
                 <tr>
                     {% for coluna in ExcelDados.0.keys %}
-                    <th>{{ coluna }}</th>
+                    <th class="px-4 py-2 text-left">{{ coluna }}</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for linha in ExcelDados %}
-                <tr class="hover:bg-primary hover:text-primary-content">
+                <tr class="{% cycle 'bg-base-100' 'bg-base-200' %} hover:bg-primary hover:text-primary-content transition-colors duration-100">
                     {% for valor in linha.values %}
-                    <td>{{ valor }}</td>
+                    <td class="px-4 py-2 break-words max-w-xs">{{ valor }}</td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        
+
+        <!-- Paginação Base -->
+        <div class="flex justify-center mt-4">
+            {% if ExcelDados.has_previous %}
+            <a href="?page=1{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Primeira</a>
+            <a href="?page={{ ExcelDados.previous_page_number }}{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Anterior</a>
+            {% endif %}
+
+            <span class="btn btn-sm mx-1 btn-success">
+                Página {{ ExcelDados.number }} de {{ ExcelDados.paginator.num_pages }}
+            </span>
+
+            {% if ExcelDados.has_next %}
+            <a href="?page={{ ExcelDados.next_page_number }}{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Próxima</a>
+            <a href="?page={{ ExcelDados.paginator.num_pages }}{% if aba_selecionada %}&aba={{ aba_selecionada }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm mx-1">Última</a>
+            {% endif %}
+        </div>
+
+
         {% else %}
         <div class="mt-6">
             <div class="alert alert-info">
@@ -78,5 +98,21 @@
         </div>
         {% endif %}
     </div>
+
+    
+    <!-- Upload de Excel
+    <div class="flex justify-center mt-10">
+        <form method="POST" enctype="multipart/form-data" class="bg-base-100 shadow-lg rounded-xl p-6 space-y-4 w-full max-w-md">
+            {% csrf_token %}
+            <label for="formFileUpload" class="text-lg font-bold text-base-content">Upload de Arquivo Excel</label>
+            <div class="space-y-4">
+                {{ form.as_p }}
+            </div>
+            <button type="submit" name="acao" value="excel" class="btn btn-primary w-full">
+                Enviar Excel
+            </button>
+        </form>
+    </div>
+    -->
 </div>
 {% endblock %}

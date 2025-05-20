@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
+from django.core.paginator import Paginator
 from .forms import *
 from .models import *
 from django.core.exceptions import ValidationError
@@ -81,7 +82,12 @@ def home(request):
             df = df[df.apply(lambda row: row.astype(str).str.contains(q, case=False, na=False).any(), axis=1)]
 
         if not df.empty:
-            excel_dados = df.to_dict(orient="records")
+            lista_de_registros = df.to_dict(orient="records")
+            paginator = Paginator(lista_de_registros, 50)  # 50 por página
+
+            page_number = request.GET.get("page")
+            page_obj = paginator.get_page(page_number)
+            excel_dados = page_obj
         else:
             erro = "Nenhum resultado encontrado."
 
