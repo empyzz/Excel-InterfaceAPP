@@ -11,6 +11,26 @@ class Excel(models.Model):
         return self.nome
     
 
+class CheckboxStatus(models.Model):
+    aba = models.CharField(max_length=100)
+    linha_index = models.IntegerField()
+    coluna = models.CharField(max_length=100)
+    checked = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('aba', 'linha_index', 'coluna')
+
+
+class TextStatus(models.Model):
+    aba = models.CharField(max_length=100)
+    linha_index = models.IntegerField()
+    coluna = models.CharField(max_length=100)
+    texto = models.CharField(max_length=50)
+
+    class Meta:
+        unique_together = ('aba', 'linha_index', 'coluna')
+
+
 class Checklist(models.Model):
     excel = models.ForeignKey(Excel, on_delete=models.CASCADE, related_name="checklist")
     aba = models.CharField(max_length=100)

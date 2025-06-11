@@ -1,5 +1,5 @@
 {% extends "home.html" %}
-
+{% load static %}
 {% block content %}
 <div class="mt-2 relative">
 
@@ -28,6 +28,15 @@
             {% endfor %}
         </select>
 
+        <select name="departamento" onchange="this.form.submit()" class="select select-bordered w-60">
+            <option value="">Todos os Departamentos</option>
+            {% for dep in departamentos %}
+                <option value="{{ dep }}" {% if departamento == dep %}selected{% endif %}>
+                    {{ dep }}
+                </option>
+            {% endfor %}
+        </select>
+
         <button type="submit" class="btn btn-outline btn-primary text-left">
             <i class="fa-solid fa-magnifying-glass"></i>Pesquisar
         </button>
@@ -53,24 +62,65 @@
             {% endif %}
         </div>
 
-        <table class="table w-full text-sm whitespace-normal mt-4 max-h-96">
-            <thead class="bg-base-300 text-base-content sticky top-0 z-1">
-                <tr>
-                    {% for coluna in ExcelDados.0.keys %}
-                    <th class="px-4 py-2 text-left">{{ coluna }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for linha in ExcelDados %}
-                <tr class="{% cycle 'bg-base-100' 'bg-base-200' %} hover:bg-primary hover:text-primary-content transition-colors duration-100">
-                    {% for valor in linha.values %}
-                    <td class="px-4 py-2 break-words max-w-xs">{{ valor }}</td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <!-- TABELA -->
+        <form method="post" id="checkbox-form">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="salvar_checkboxes">
+            <input type="hidden" name="aba" value="{{ aba_selecionada }}">
+
+            <table class="table w-full text-sm whitespace-normal mt-4 text-left">
+                <thead class="bg-base-300 text-base-content sticky top-0 z-10 shadow-md border-b border-base-content/20">
+                    <tr>
+                        {% for coluna in ExcelDados.0.keys %}
+                            <th class="px-4 py-3 font-semibold">{{ coluna }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                    <tbody class="divide-y divide-base-200">
+                        {% for linha in ExcelDados %}
+                            <tr class="{% cycle 'even:bg-base-100' 'odd:bg-base-200' %} hover:bg-primary/30 transition-colors duration-150">
+                                {% for coluna, valor in linha.items %}
+                                    {% if not colunas_visiveis or coluna in colunas_visiveis %}
+                                        <td class="px-4 py-3 align-middle max-w-xs break-words">
+                                            <label class="flex items-center gap-2">
+                                                {% if aba_selecionada|slice:":1" == "M" and aba_selecionada != "MOLDES EM PROGRESSO" %}
+                                                    {% if coluna in colunas_checkbox_m %}
+                                                        <input type="checkbox"
+                                                            class="checkbox checkbox-md border-2 border-orange-500 bg-transparent checked:border-orange-500 checked:bg-orange-500 checked:text-white hover:border-orange-400"
+                                                            name="checkbox"
+                                                            data-linha="{{ forloop.parentloop.counter0 }}"
+                                                            data-coluna="{{ coluna }}"
+                                                            value="{{ forloop.parentloop.counter0 }}__{{ coluna }}"
+                                                            {% if forloop.parentloop.counter0|stringformat:"d"|add:"__"|add:coluna in saved_checkboxes %}
+                                                                checked
+                                                            {% endif %}
+                                                        >
+                                                    {% endif %}
+                                                {% elif aba_selecionada|slice:":5" == "DADOS" %}
+                                                    {% if coluna in colunas_checkbox_d %}
+                                                        <input type="checkbox"
+                                                            class="checkbox checkbox-md border-2 border-orange-500 bg-transparent checked:border-orange-500 checked:bg-orange-500 checked:text-white hover:border-orange-400"
+                                                            name="checkbox"
+                                                            data-linha="{{ forloop.parentloop.counter0 }}"
+                                                            data-coluna="{{ coluna }}"
+                                                            value="{{ forloop.parentloop.counter0 }}__{{ coluna }}"
+                                                            {% if forloop.parentloop.counter0|stringformat:"d"|add:"__"|add:coluna in saved_checkboxes %}
+                                                                checked
+                                                            {% endif %}
+                                                        >
+                                                    {% endif %}
+                                                {% endif %}
+                                                <span>{{ valor }}</span>
+                                            </label>
+                                        </td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+            </table>
+        </form>
+
 
         <!-- Paginação Base -->
         <div class="flex justify-center mt-4">
@@ -99,7 +149,36 @@
         {% endif %}
     </div>
 
-    
+    <div class="mt-10 border-t pt-4 text-center">
+        <h2 class="text-xl font-semibold mb-4 text-base-content">Ações com Excel</h2>
+
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-2">
+            <!-- Botão de download do modelo -->
+            <a href="{% static 'templates/TemplateMoldes.xlsm' %}" download
+            class="inline-flex items-center px-5 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+                <i class="fas fa-download mr-2"></i>
+                Baixar Modelo XLSX
+            </a>
+
+            <!-- Botão de exportar dados -->
+            <a href="{% url 'exportar_excel' %}"
+            class="inline-flex items-center px-5 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition">
+                <i class="fas fa-file-excel mr-2"></i>
+                Exportar Dados para Excel
+            </a>
+
+            <!-- Botão de importar planilha -->
+            <form method="post" enctype="multipart/form-data" action="{% url 'importar_planilha' %}">
+                {% csrf_token %}
+                <label class="inline-flex items-center px-5 py-3 bg-yellow-600 text-white rounded-lg shadow hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition cursor-pointer">
+                    <i class="fas fa-upload mr-2"></i>
+                    Importar Planilha
+                    <input type="file" name="planilha" accept=".xlsx,.xlsm" hidden onchange="this.form.submit()">
+                </label>
+            </form>
+        </div>
+    </div>
+
     <!-- Upload de Excel
     <div class="flex justify-center mt-10">
         <form method="POST" enctype="multipart/form-data" class="bg-base-100 shadow-lg rounded-xl p-6 space-y-4 w-full max-w-md">
@@ -115,4 +194,36 @@
     </div>
     -->
 </div>
+
+
+
+<script>
+document.querySelectorAll('input[type="checkbox"][name="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+        const linha = cb.dataset.linha;
+        const coluna = cb.dataset.coluna;
+        const aba = "{{ aba_selecionada }}";
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch("", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                acao: "salvar_checkboxes",
+                aba: aba,
+                checkbox: `${linha}__${coluna}`
+            })
+        }).then(res => {
+            if (!res.ok) console.error("Erro ao salvar checkbox");
+        }).catch(err => {
+            console.error("Falha ao enviar checkbox:", err);
+        });
+    });
+});
+</script>
+
+
 {% endblock %}
