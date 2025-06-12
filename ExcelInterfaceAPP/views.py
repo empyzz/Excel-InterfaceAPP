@@ -53,7 +53,6 @@ def home(request):
         "M": ["Ord Serv", "Item", "Descrição"],
     }
 
-
     def limpar_checkboxes_em_colunas(df, colunas):
         df = df.copy()
         for coluna in colunas:
@@ -75,7 +74,7 @@ def home(request):
 
                     excel_obj = Excel(nome=arquivo_excel.name, arquivo=arquivo_excel)
                     excel_obj.save()
-                    cache.delete('excel_dfs')  # Limpa cache para forçar recarregamento
+                    cache.delete('excel_dfs')  # Limpa cache
                 except ValidationError as e:
                     erro = str(e)
                 except Exception as e:
@@ -98,7 +97,13 @@ def home(request):
                     erro = f"Erro ao salvar checkbox: {e}"
 
     try:
-        dfs_por_aba = cache.get('excel_dfs', {})  # Inicializa como dict vazio se cache vazio
+        dfs_por_aba = cache.get('excel_dfs', {})
+        ultimo_excel_data = Excel.objects.order_by("-data").values_list("data", flat=True).first()
+        cache_data_key = cache.get("excel_cache_data")
+
+        if ultimo_excel_data and cache_data_key != str(ultimo_excel_data):
+            cache.delete("excel_dfs")
+            cache.set("excel_cache_data", str(ultimo_excel_data))
 
         if not dfs_por_aba:
             todos_excel = Excel.objects.all().order_by('data')
@@ -109,25 +114,38 @@ def home(request):
                     caminho_arquivo = excel.arquivo.path
                     excel_dict = pd.read_excel(caminho_arquivo, sheet_name=None)
 
-                    # Prepara as abas com nome único por arquivo
                     for aba_nome, df in excel_dict.items():
-                        nome_completo = f"{aba_nome} - {excel.data}"
                         df_limpo = df.fillna("").loc[:, ~df.columns.str.contains('^Unnamed')]
+                        nome_completo = aba_nome
+
+                        if nome_completo in dfs_por_aba:
+                            try:
+                                if df_limpo.equals(dfs_por_aba[nome_completo]):
+                                    continue  # já existe igual
+                                else:
+                                    sufixo = 1
+                                    novo_nome = f"{nome_completo} ({sufixo})"
+                                    while novo_nome in dfs_por_aba:
+                                        sufixo += 1
+                                        novo_nome = f"{nome_completo} ({sufixo})"
+                                    nome_completo = novo_nome
+                            except:
+                                continue
+
                         dfs_por_aba[nome_completo] = df_limpo
+
                 except Exception as e:
                     erro = f"Erro ao processar o arquivo '{excel.nome}': {e}"
 
-            cache.set('excel_dfs', dfs_por_aba, timeout=600)
+            cache.set('excel_dfs', dfs_por_aba, timeout=300)
 
         abas_disponiveis = list(dfs_por_aba.keys())
-
         dfs_filtrados = {}
 
         if q:
-            for nome_aba, df in dfs_por_aba.items():
-                # Filtra linhas que contenham a query em qualquer coluna
-                mask = df.astype(str).apply(lambda col: col.str.contains(q, case=False, na=False)).any(axis=1)
-                df_filtrado = df[mask]
+            for nome_aba, df_original in dfs_por_aba.items():
+                mask = df_original.astype(str).apply(lambda col: col.str.contains(q, case=False, na=False)).any(axis=1)
+                df_filtrado = df_original[mask]
                 dfs_filtrados[nome_aba] = df_filtrado
 
                 if df_filtrado.empty:
@@ -135,18 +153,24 @@ def home(request):
                 else:
                     abas_filtradas.append(nome_aba)
 
-            aba = aba_selecionada or (abas_filtradas[0] if abas_filtradas else (abas_disponiveis[0] if abas_disponiveis else None))
+            aba = aba_selecionada or (abas_filtradas[0] if abas_filtradas else None)
             if aba:
-                df = dfs_filtrados.get(aba, dfs_por_aba.get(aba))
+                df = dfs_filtrados.get(aba, pd.DataFrame())
             else:
-                df = pd.DataFrame()  # Se não houver abas
-
-        else:
-            aba = aba_selecionada or (abas_disponiveis[0] if abas_disponiveis else None)
-            if aba:
-                df = dfs_por_aba.get(aba)
-            else:
+                erro = "Nenhum resultado encontrado."
                 df = pd.DataFrame()
+        else:
+            # Corrigido: escolha uma aba com dados
+            aba = aba_selecionada
+            if not aba:
+                for nome_aba, df_test in dfs_por_aba.items():
+                    if not df_test.empty:
+                        aba = nome_aba
+                        break
+                if not aba:
+                    erro = "Nenhuma aba com dados disponíveis."
+                    df = pd.DataFrame()
+            df = dfs_por_aba.get(aba, pd.DataFrame()) if aba else pd.DataFrame()
 
         if df is None or df.empty:
             erro = "Nenhum resultado encontrado."
@@ -156,7 +180,6 @@ def home(request):
             colunas_checkbox = ["Modelo 3d", "aço", "Programa NC", "DMG", "600 II", "800 II", "600 I", "800 I", "IXION II"]
             df = limpar_checkboxes_em_colunas(df, colunas_checkbox)
 
-        # Remove "☑" em todo DataFrame, de forma eficiente
         df = df.replace("☑", "")
 
         tipo_aba = None
@@ -166,21 +189,14 @@ def home(request):
             elif aba.startswith("M"):
                 tipo_aba = "M"
 
-        # Aplica o filtro apenas se o tipo da aba for conhecido
         if not df.empty and tipo_aba and departamento:
             colunas_fixas = COLUNAS_FIXAS.get(tipo_aba, [])
-            if tipo_aba == "DADOS":
-                colunas_departamento = DEPARTAMENTO_COLUNAS_DADOS.get(departamento, [])
-            elif tipo_aba == "M":
-                colunas_departamento = DEPARTAMENTO_COLUNAS_M.get(departamento, [])
-            else:
-                colunas_departamento = []
+            colunas_departamento = (
+                DEPARTAMENTO_COLUNAS_DADOS.get(departamento, []) if tipo_aba == "DADOS"
+                else DEPARTAMENTO_COLUNAS_M.get(departamento, [])
+            )
 
-            colunas_desejadas = [
-                col for col in df.columns
-                if col in colunas_fixas or col in colunas_departamento
-            ]
-
+            colunas_desejadas = [col for col in df.columns if col in colunas_fixas or col in colunas_departamento]
             df = df[colunas_desejadas]
 
         if not df.empty:
@@ -219,7 +235,6 @@ def home(request):
     }
 
     return render(request, 'ExcelInterface/table.html', contexto)
-
 
 def ChecklistPagina(request):
     checklists = Checklist.objects.all()
